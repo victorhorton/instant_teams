@@ -67,11 +67,15 @@ set_4 = [
 
 def calc_reimbursement(projects)
 
-	travel_low_cost = 45
-	travel_high_cost = 55
+	travel_day_costs = {
+		'low_cost'=>45,
+		'high_cost'=>55
+	}
 
-	full_low_cost = 75
-	full_high_cost = 85
+	full_day_costs = {
+		'low_cost'=>75,
+		'high_cost'=>85
+	}
 
 	set_totals = []
 	set_days = []
@@ -82,42 +86,31 @@ def calc_reimbursement(projects)
 		start_day = project[:start_date].split('/')[1].to_i
 		end_day = project[:end_date].split('/')[1].to_i
 
+		project_full_cost = full_day_costs["#{project[:city_type]}"]
+		project_travel_cost = travel_day_costs["#{project[:city_type]}"]
+
 		project_days = (start_day..end_day).to_a
 		
 		doubled_project_dates = []
 		project_days.each_with_index do |project_day, idx|
 
-			if project[:city_type] == 'low_cost'
-				if doubled_set_dates.include?(project_day) && !doubled_project_dates.include?(project_day)
-					set_totals.delete_at set_days.find_index project_day
+			is_travel_day = (idx == 0 || idx == project_days.length - 1)
+			is_two_travel_days = doubled_set_dates.include?(project_day) && !doubled_project_dates.include?(project_day)
 
-					set_totals.push(full_low_cost)
-				else
-					if idx == 0 || idx == project_days.length - 1
-						set_totals.push(travel_low_cost)
-						set_days.push(project_day)
-					else
-						set_totals.push(full_low_cost)
-						set_days.push(project_day)
-					end
-				end
+			if is_two_travel_days
+				set_totals.delete_at set_days.find_index project_day
+
+				set_totals.push(project_full_cost)
 			else
-				if doubled_set_dates.include?(project_day) && !doubled_project_dates.include?(project_day)
-					set_totals.delete_at set_days.find_index project_day
-
-					set_totals.push(full_high_cost)
+				if is_travel_day
+					set_totals.push(project_travel_cost)
+					set_days.push(project_day)
 				else
-					if (idx == 0 || idx == project_days.length - 1)
-						set_totals.push(travel_high_cost)
-						set_days.push(project_day)
-					elsif true
-						set_totals.push(full_high_cost)
-						set_days.push(project_day)
-					else
-						set_days.push(project_day)
-					end
+					set_totals.push(project_full_cost)
+					set_days.push(project_day)
 				end
 			end
+
 			doubled_project_dates.push(project_day)
 			doubled_set_dates.push(project_day)
 		end
